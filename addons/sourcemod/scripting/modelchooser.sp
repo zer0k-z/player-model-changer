@@ -39,7 +39,7 @@ public Plugin myinfo =
 	name = "ModelChooser", 
 	author = "GameChaos, Sikari", 
 	description = "ModelChooser with clientprefs support", 
-	version = "4.0k", 
+	version = "4.1k", 
 	url = "https://github.com/zer0k-z/player-model-changer"
 };
 
@@ -67,7 +67,7 @@ public void OnMapStart()
 
 public void OnClientConnected(int client)
 {
-	gI_SelectedModel[client] = -1;
+	gI_SelectedModel[client] = 0;
 }
 
 public void OnClientCookiesCached(int client)
@@ -121,7 +121,7 @@ void LoadModelsFromFile()
 		SetFailState("Failed reading %s as KeyValues, make sure it is in KeyValues format!", CONFIG_FILE);
 	}
 
-	gI_ModelCount = 0;
+	gI_ModelCount = 1;
 	
 	while (config.GotoFirstSubKey() || config.GotoNextKey())
 	{
@@ -163,7 +163,7 @@ void ChangeModel(int client, int modelIndex)
 		return;
 	}
 
-	if (gI_SelectedModel[client] < 0)
+	if (gI_SelectedModel[client] <= 0)
 	{
 		return;
 	}
@@ -192,8 +192,8 @@ void ShowModelsMenu(int client, int atItem = 0)
 {
 	Menu menu = new Menu(MenuModels, MENU_ACTIONS_ALL);
 	menu.SetTitle("Player Models");
-
-	for (int i = 0; i < gI_ModelCount; i++)
+	menu.AddItem("0", "Default");
+	for (int i = 1; i < gI_ModelCount; i++)
 	{
 		char index[12];
 		IntToString(i, index, sizeof(index));
@@ -213,9 +213,14 @@ public int MenuModels(Menu menu, MenuAction action, int param1, int param2)
 		
 		int modelSelection = StringToInt(info);
 		gI_SelectedModel[param1] = modelSelection;
-
-		ChangeModel(param1, modelSelection);
-		ShowModelsMenu(param1, (param2 / menu.Pagination * menu.Pagination));
+		if (modelSelection != 0)
+		{
+			ChangeModel(param1, modelSelection);
+		}
+		else
+		{
+			PrintToChat(param1, "Your model will be changed to the default model upon respawning.");
+		}
 
 		if (AreClientCookiesCached(param1))
 		{
@@ -223,6 +228,7 @@ public int MenuModels(Menu menu, MenuAction action, int param1, int param2)
 			IntToString(modelSelection, buffer, sizeof(buffer));
 			gH_Cookie.Set(param1, buffer);
 		}
+		ShowModelsMenu(param1, (param2 / menu.Pagination * menu.Pagination));
 	}
 
 	else if (action == MenuAction_End)
